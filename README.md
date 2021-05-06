@@ -119,7 +119,7 @@ CUDA_VISIBLE_DEVICES=0,1 ./project/train.py --config ./project/config/model/sent
 ## Test-Run
 For Testing use the same config as you have trained, since it contains all necessary information, e.g., path to test data, config of test-dataloader, logging info, etc. It may take longer, but use only ONE GPU for testing (e.g., ``CUDA_VISIBLE_DEVICES=_one_gpu_id_of_your_choice_``). Only test once, right before you report/submit (after validation, tuning, ...). You have to provide a checkpoint of your choice (e.g., best performing hyperparam setting according to val, etc.) and can run a test as following:
 ```
-./project/test --config project/config/model/sentirec/vader_lambda0p3_mu10.yaml --ckpt path_to_ckpt_of_your_choice
+./project/test.py --config project/config/model/sentirec/vader_lambda0p3_mu10.yaml --ckpt path_to_ckpt_of_your_choice
 ```
 
 ## Monitoring
