@@ -13,9 +13,11 @@ from pytorch_lightning.plugins import DDPPlugin
 from models.lstur import LSTUR
 from models.nrms import NRMS
 from models.naml import NAML
+from models.naml_simple import NAML_Simple
 from models.sentirec import SENTIREC
 from models.robust_sentirec import ROBUST_SENTIREC
 from data.dataset import BaseDataset
+from tqdm import tqdm
 
 
 def cli_main():
@@ -41,7 +43,7 @@ def cli_main():
         config = yaml.load(ymlfile, Loader=yaml.FullLoader)
         config = DotMap(config)
 
-    assert(config.name in ["lstur", "nrms", "naml", "sentirec", "robust_sentirec"])
+    assert(config.name in ["lstur", "nrms", "naml", "naml_simple", "sentirec", "robust_sentirec"])
 
     pl.seed_everything(1234)
     
@@ -58,15 +60,14 @@ def cli_main():
     # ------------
     # data
     # ------------
-    dataset = BaseDataset(
-        path.join(config.train_dir, 'behaviors_parsed.tsv'),
-        path.join(config.train_dir, 'news_parsed.tsv'), 
+    train_dataset = BaseDataset(
+        path.join(config.train_behavior),
+        path.join(config.train_news), 
+        config)
+    val_dataset = BaseDataset(
+        path.join(config.val_behavior),
+        path.join(config.train_news), 
         config) 
-    train_len = int(config.train_val_split*len(dataset))
-    # train val split
-    val_len = len(dataset) - train_len
-    train_dataset, val_dataset= torch.utils.data.random_split(dataset, [train_len, val_len])
-    
     train_loader = DataLoader(
         train_dataset,
         **config.train_dataloader)
@@ -77,18 +78,25 @@ def cli_main():
     # ------------
     # init model
     # ------------
-    try:
-        pretrained_word_embedding = torch.from_numpy(
-            np.load(path.join(config.train_dir, 'pretrained_word_embedding.npy'))
-            ).float()
-    except FileNotFoundError:
-        pretrained_word_embedding = None
+    # load embedding pre-trained embedding weights
+    embedding_weights=[]
+    with open(config.embedding_weights, 'r') as file: 
+        lines = file.readlines()
+        for line in tqdm(lines):
+            weights = [float(w) for w in line.split(" ")]
+            embedding_weights.append(weights)
+    pretrained_word_embedding = torch.from_numpy(
+        np.array(embedding_weights, dtype=np.float32)
+        )
+
     if config.name == "lstur":
         model = LSTUR(config, pretrained_word_embedding)
     elif config.name == "nrms":
         model = NRMS(config, pretrained_word_embedding)
     elif config.name == "naml":
         model = NAML(config, pretrained_word_embedding)
+    elif config.name == "naml_simple":
+        model = NAML_Simple(config, pretrained_word_embedding)
     elif config.name == "sentirec":
         model = SENTIREC(config, pretrained_word_embedding)
     elif config.name == "robust_sentirec":
@@ -111,7 +119,7 @@ def cli_main():
             **config.trainer,
             callbacks=[early_stop_callback, checkpoint_callback],
             logger=logger,
-            plugins=DDPPlugin(find_unused_parameters=False), 
+            plugins=DDPPlugin(find_unused_parameters=config.find_unused_parameters), 
             resume_from_checkpoint=args.resume
         )
     else:
@@ -119,7 +127,7 @@ def cli_main():
             **config.trainer,
             callbacks=[early_stop_callback, checkpoint_callback],
             logger=logger,
-            plugins=DDPPlugin(find_unused_parameters=False)
+            plugins=DDPPlugin(find_unused_parameters=config.find_unused_parameters)
         )
     trainer.fit(
         model=model, 

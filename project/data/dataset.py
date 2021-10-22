@@ -1,87 +1,80 @@
 from torch.utils.data import Dataset
-import pandas as pd
-from ast import literal_eval
 import torch
+from tqdm import tqdm
 
 
 class BaseDataset(Dataset):
-    def __init__(self,
-                 behaviors_path,
-                 news_path,
-                 config):
+    def __init__(self, behavior_path, news_path, config):
         super(BaseDataset, self).__init__()
         self.config = config
-        assert all(attribute in [
-            'category', 'subcategory', 'title', 'abstract', 'title_entities',
-            'abstract_entities', 'vader_sentiment', 'distillbert_sst2_sentiment'
-        ] for attribute in config.dataset_attributes.news)
-        assert all(attribute in ['user', 'clicked_news_length']
-                   for attribute in config.dataset_attributes.record)
-
-        self.behaviors_parsed = pd.read_table(behaviors_path)
-        self.news_parsed = pd.read_table(
-            news_path,
-            index_col='id',
-            usecols=['id'] + config.dataset_attributes.news,
-            converters={
-                attribute: literal_eval
-                for attribute in set(config.dataset_attributes.news) & set([
-                    'title', 'abstract', 'title_entities', 'abstract_entities',
-                    'vader_sentiment', 'distillbert_sst2_sentiment'
-                ])
-            })
-        self.news_id2int = {x: i for i, x in enumerate(self.news_parsed.index)}
-        self.news2dict = self.news_parsed.to_dict('index')
-        padding_all = {
-            'category': 0,
-            'subcategory': 0,
-            'title': [0] * config.num_words_title,
-            'abstract': [0] * config.num_words_abstract,
-            'title_entities': [0] * config.num_words_title,
-            'abstract_entities': [0] * config.num_words_abstract,
-            'vader_sentiment': 0.0, 
-            'distillbert_sst2_sentiment': 0.0
-        }
-        for key in padding_all.keys():
-            padding_all[key] = torch.tensor(padding_all[key])
-
-        self.padding = {
-            k: v
-            for k, v in padding_all.items()
-            if k in config.dataset_attributes.news
+        self.behaviors_parsed = []
+        news_parsed = {}
+        #
+        # loading and preparing news collection
+        #       
+        with open(news_path, 'r') as file:
+            news_collection = file.readlines()
+            for news in tqdm(news_collection):
+                nid, cat, subcat, title, abstract, vader_sent, bert_sent = news.split("\t")
+                news_parsed[nid] = {
+                    'category': torch.tensor(int(cat)),
+                    'subcategory': torch.tensor((int(subcat))),
+                    'title': torch.tensor([int(i) for i in title.split(" ")]), 
+                    'abstract': torch.tensor([int(i) for i in abstract.split(" ")]),
+                    'vader_sentiment': torch.tensor(float(vader_sent)),
+                    'bert_sentiment': torch.tensor(float(bert_sent))
+                    }
+        #
+        # loading and preparing behaviors
+        #
+        # padding for news
+        padding = {
+            'category': torch.tensor(0),
+            'subcategory': torch.tensor(0),
+            'title': torch.tensor([0] * config.num_words_title),
+            'abstract': torch.tensor([0] * config.num_words_abstract),
+            'vader_sentiment': torch.tensor(0.0), 
+            'bert_sentiment': torch.tensor(0.0)
         }
 
-    def _news2dict(self, id):
-        ret = self.news2dict[id]
-        for key in ret.keys():
-            if torch.is_tensor(ret[key]):
-                ret[key] = ret[key]
-            else:
-                ret[key] = torch.tensor(ret[key])
-
-        return ret
+        with open(behavior_path, 'r') as file:
+            behaviors = file.readlines()
+            for behavior in tqdm(behaviors):
+                uid, hist, candidates, clicks = behavior.split("\t")
+                user = torch.tensor(int(uid))
+                if hist:
+                    history = [news_parsed[i] for i in hist.split(" ")]
+                    if len(history) > config.max_history: 
+                        history = history[:config.max_history]
+                    else:
+                        repeat = config.max_history - len(history)
+                        history = [padding]*repeat + history
+                else:
+                    history = [padding]*config.max_history
+                candidates = [news_parsed[i] for i in candidates.split(" ")]
+                labels = torch.tensor([int(i) for i in clicks.split(" ")])
+                self.behaviors_parsed.append(
+                    {
+                        'user': user,
+                        'h_title': torch.stack([h['title'] for h in history]),
+                        'h_abstract': torch.stack([h['abstract'] for h in history]),
+                        'h_category': torch.stack([h['category'] for h in history]),
+                        'h_subcategory': torch.stack([h['subcategory'] for h in history]),
+                        'h_vader_sentiment': torch.stack([h['vader_sentiment'] for h in history]),
+                        'h_bert_sentiment': torch.stack([h['bert_sentiment'] for h in history]),
+                        'history_length': torch.tensor(len(history)),
+                        'c_title': torch.stack([c['title'] for c in candidates]),
+                        'c_abstract': torch.stack([c['abstract'] for c in candidates]),
+                        'c_category': torch.stack([c['category'] for c in candidates]),
+                        'c_subcategory': torch.stack([c['subcategory'] for c in candidates]),
+                        'c_vader_sentiment': torch.stack([c['vader_sentiment'] for c in candidates]),
+                        'c_bert_sentiment': torch.stack([c['bert_sentiment'] for c in candidates]),
+                        'labels': labels
+                    }
+                )
 
     def __len__(self):
         return len(self.behaviors_parsed)
 
     def __getitem__(self, idx):
-        item = {}
-        row = self.behaviors_parsed.iloc[idx]
-        if 'user' in self.config.dataset_attributes.record:
-            item['user'] = torch.tensor(row.user)
-        item["clicked"] = torch.tensor(list(map(int, row.clicked.split())))
-        item["candidate_news"] = [
-            self._news2dict(x) for x in row.candidate_news.split()
-        ]
-        item["clicked_news"] = [
-            self._news2dict(x)
-            for x in row.clicked_news.split()[:self.config.num_clicked_news_a_user]   # noqa: E501
-        ]
-        if 'clicked_news_length' in self.config.dataset_attributes['record']:
-            item['clicked_news_length'] = torch.tensor(len(item["clicked_news"]))
-        repeated_times = self.config.num_clicked_news_a_user - \
-            len(item["clicked_news"])
-        assert repeated_times >= 0
-        item["clicked_news"] = [self.padding
-                                ] * repeated_times + item["clicked_news"]
-        return item
+        return self.behaviors_parsed[idx]

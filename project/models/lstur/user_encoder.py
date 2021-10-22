@@ -7,11 +7,11 @@ class UserEncoder(torch.nn.Module):
     def __init__(self, config):
         super(UserEncoder, self).__init__()
         self.config = config
-        assert int(config.num_filters * 1.5) == config.num_filters * 1.5
+        assert int(config.num_filters * 0.5) == config.num_filters * 0.5
         self.gru = nn.GRU(
-            config.num_filters * 3,
-            config.num_filters * 3 if config.long_short_term_method == 'ini'
-            else int(config.num_filters * 1.5))
+            config.num_filters,
+            config.num_filters if config.long_short_term_method == 'ini'
+            else int(config.num_filters * 0.5))
 
     def forward(self, user, clicked_news_length, clicked_news_vector):
         clicked_news_length[clicked_news_length == 0] = 1
@@ -27,7 +27,7 @@ class UserEncoder(torch.nn.Module):
         else:
             packed_clicked_news_vector = pack_padded_sequence(
                 clicked_news_vector,
-                clicked_news_length,
+                clicked_news_length.cpu(),
                 batch_first=True,
                 enforce_sorted=False)
             _, last_hidden = self.gru(packed_clicked_news_vector)

@@ -13,9 +13,11 @@ from pytorch_lightning.plugins import DDPPlugin
 from models.lstur import LSTUR
 from models.nrms import NRMS
 from models.naml import NAML
+from models.naml_simple import NAML_Simple
 from models.sentirec import SENTIREC
 from models.robust_sentirec import ROBUST_SENTIREC
 from data.dataset import BaseDataset
+from tqdm import tqdm
 
 
 def cli_main():
@@ -41,7 +43,7 @@ def cli_main():
         config = yaml.load(ymlfile, Loader=yaml.FullLoader)
         config = DotMap(config)
 
-    assert(config.name in ["lstur", "nrms", "naml", "sentirec", "robust_sentirec"])
+    assert(config.name in ["lstur", "nrms", "naml", "naml_simple", "sentirec", "robust_sentirec"])
 
     pl.seed_everything(1234)
     
@@ -57,24 +59,31 @@ def cli_main():
     # ------------
 
     test_dataset = BaseDataset(
-        path.join(config.test_dir, 'behaviors_parsed.tsv'),
-        path.join(config.test_dir, 'news_parsed.tsv'),
+        path.join(config.test_behavior),
+        path.join(config.test_news), 
         config)
     test_loader = DataLoader(
         test_dataset,
-        **config.val_dataloader)
+        **config.test_dataloader)
    
     #print(len(dataset), len(train_dataset), len(val_dataset))
     # ------------
     # init model
     # ------------
-    try:
-        pretrained_word_embedding = torch.from_numpy(
-            np.load(path.join(config.train_dir, 'pretrained_word_embedding.npy'))
-            ).float()
-    except FileNotFoundError:
-        pretrained_word_embedding = None
-    
+    # ------------
+    # init model
+    # ------------
+    # load embedding pre-trained embedding weights
+    embedding_weights=[]
+    with open(config.embedding_weights, 'r') as file: 
+        lines = file.readlines()
+        for line in tqdm(lines):
+            weights = [float(w) for w in line.split(" ")]
+            embedding_weights.append(weights)
+    pretrained_word_embedding = torch.from_numpy(
+        np.array(embedding_weights, dtype=np.float32)
+        )
+
     if config.name == "lstur":
         model = LSTUR.load_from_checkpoint(
             args.ckpt, 
@@ -87,6 +96,11 @@ def cli_main():
             pretrained_word_embedding=pretrained_word_embedding)
     elif config.name == "naml":
         model = NAML.load_from_checkpoint(
+            args.ckpt, 
+            config=config, 
+            pretrained_word_embedding=pretrained_word_embedding)
+    elif config.name == "naml_simple":
+        model = NAML_Simple.load_from_checkpoint(
             args.ckpt, 
             config=config, 
             pretrained_word_embedding=pretrained_word_embedding)

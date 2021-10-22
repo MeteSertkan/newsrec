@@ -1,4 +1,4 @@
-# RobustSentirec vader mu 10
+# Robust Sentirec bert mu 1
 
 # INFO
 name: robust_sentirec
@@ -37,18 +37,18 @@ num_attention_heads: 15
 word_embedding_dim: 300
 freeze_word_embeddings: False
 # SENTIMENT
-sentiment_regularization: True
+sentiment_regularization: True 
 # Sentiment Classifier 'vader_sentiment' | 'bert_sentiment'
-sentiment_classifier: 'vader_sentiment'
+sentiment_classifier: 'bert_sentiment'
 # sentiment regularization task loss coeff, i.e., mu
-sentiment_diversity_loss_coeff: 10
+sentiment_diversity_loss_coeff: 1.0
 
 
 
 # TRAINING
 # Checkpoint
 checkpoint:
-  dirpath: "logs/lightning_logs/checkpoints/robust_sentirec/vader_mu10"
+  dirpath: "logs/lightning_logs/checkpoints/robust_sentirec/bert_mu1"
   filename: "{epoch}-{val_auc_epoch:.4f}"
   save_top_k: 3
   verbose: True
@@ -60,7 +60,7 @@ checkpoint:
 logger:
   save_dir: "logs/lightning_logs/tensorboard"
   name: "robust_sentirec"
-  version: "vader_mu10"
+  version: "bert_mu1"
 
 #EarlyStop
 early_stop:

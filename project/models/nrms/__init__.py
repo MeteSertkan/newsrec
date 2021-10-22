@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 from torchmetrics import MetricCollection
 from models.nrms.news_encoder import NewsEncoder
 from models.nrms.user_encoder import UserEncoder
-from models.click_probability import DotProductClickPredictor
+from models.utils import TimeDistributed
 from models.metrics import NDCG, MRR, AUC, SentiMRR, Senti
 
 
@@ -15,13 +15,13 @@ class NRMS(pl.LightningModule):
     Input 1 + K candidate news and a list of user clicked news,
     produce the click probability.
     """
-
     def __init__(self, config=None, pretrained_word_embedding=None):
         super(NRMS, self).__init__()
         self.config = config
-        self.news_encoder = NewsEncoder(config, pretrained_word_embedding)
+        news_encoder = NewsEncoder(config, pretrained_word_embedding)
+        self.news_encoder = TimeDistributed(news_encoder, batch_first=True)
         self.user_encoder = UserEncoder(config)
-        self.click_predictor = DotProductClickPredictor()
+        #self.click_predictor = DotProductClickPredictor()
         # val metrics
         self.val_performance_metrics = MetricCollection({
             'val_auc': AUC(),
@@ -57,30 +57,32 @@ class NRMS(pl.LightningModule):
             'test_senti@10_bert': Senti(k=10)
         })
 
-    def forward(self, candidate_news, clicked_news):
-        # compute candidate news representation
-        candidate_news_vector = torch.stack(
-            [self.news_encoder(x) for x in candidate_news], dim=1)
-        # compute browsed news representation
-        clicked_news_vector = torch.stack(
-            [self.news_encoder(x) for x in clicked_news], dim=1)
-        # compute user representation
+    def forward(self, batch):
+        # encode candidate news
+        candidate_news_vector = self.news_encoder(batch["c_title"])
+        # encode history 
+        clicked_news_vector = self.news_encoder(batch["h_title"])
+        # encode user
         user_vector = self.user_encoder(clicked_news_vector)
-        # compute click score
-        click_probability = self.click_predictor(candidate_news_vector,
-                                                 user_vector)
-        return click_probability
+        # compute scores for each candidate news
+        clicks_score = torch.bmm(
+            candidate_news_vector,
+            user_vector.unsqueeze(dim=-1)).squeeze(dim=-1)
+        
+        return clicks_score
 
     def training_step(self, batch, batch_idx):
-        y_pred = self(batch["candidate_news"], batch["clicked_news"])
+        y_pred = self(batch)
+        y_pred = torch.sigmoid(y_pred)
         y = torch.zeros(len(y_pred)).long().to(self.device)
         loss = F.cross_entropy(y_pred, y)
         self.log('train_loss', loss, on_step=True, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        y_pred = self(batch["candidate_news"], batch["clicked_news"])
-        y = batch["clicked"]
+        y_pred = self(batch)
+        y_pred = F.softmax(y_pred, dim=1)
+        y = batch["labels"]
         # determine candidate sentiment and overall sentiment orientation
         s_c_vader, s_c_bert, s_mean_vader, s_mean_bert = self.sentiment_evaluation_helper(batch)
         # compute metrics
@@ -93,8 +95,9 @@ class NRMS(pl.LightningModule):
         self.log_dict(self.val_sentiment_diversity_metrics_bert, on_step=True, on_epoch=True)
 
     def test_step(self, batch, batch_idx):
-        y_pred = self(batch["candidate_news"], batch["clicked_news"])
-        y = batch["clicked"]
+        y_pred = self(batch)
+        y_pred = F.softmax(y_pred, dim=1)
+        y = batch["labels"]
         # determine candidate sentiment and overall sentiment orientation
         s_c_vader, s_c_bert, s_mean_vader, s_mean_bert = self.sentiment_evaluation_helper(batch)
         # compute metrics
@@ -113,35 +116,13 @@ class NRMS(pl.LightningModule):
     def sentiment_evaluation_helper(self, batch):
         # sentiment scores of candidate news
         # (determined through sentiment classifier)
-        s_c_vader = []
-        s_c_bert = []
-        for x in batch["candidate_news"]:
-            s_c_vader.append(x['vader_sentiment'])
-            s_c_bert.append(x['distillbert_sst2_sentiment'])
-        s_c_vader = torch.stack(s_c_vader,dim=1).flatten()
-        s_c_bert = torch.stack(s_c_bert,dim=1).flatten()
-
+        s_c_vader = batch["c_vader_sentiment"].flatten()
+        s_c_bert = batch["c_bert_sentiment"].flatten()
         # calc mean sentiment score from browsed news
-        # (using sentiment classifier)
-        s_clicked_vader = []
-        s_clicked_bert = []
-        for x in batch["clicked_news"]:
-            s_clicked_vader.append(x['vader_sentiment'])
-            s_clicked_bert.append(x['distillbert_sst2_sentiment'])
-        s_clicked_vader = torch.stack(s_clicked_vader, dim=1).flatten()
-        s_clicked_bert = torch.stack(s_clicked_bert, dim=1).flatten()
+        # (using sentiment classifier
+        s_clicked_vader = batch["h_vader_sentiment"].flatten()
+        s_clicked_bert = batch["h_bert_sentiment"].flatten()
         s_mean_vader = s_clicked_vader.mean()
         s_mean_bert = s_clicked_bert.mean()
 
         return s_c_vader, s_c_bert, s_mean_vader, s_mean_bert
-
-    def get_news_vector(self, news):
-        return self.news_encoder(news)
-
-    def get_user_vector(self, clicked_news_vector):
-        return self.user_encoder(clicked_news_vector)
-
-    def get_prediction(self, news_vector, user_vector):
-        return self.click_predictor(
-            news_vector.unsqueeze(dim=0),
-            user_vector.unsqueeze(dim=0)).squeeze(dim=0)

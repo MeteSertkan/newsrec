@@ -3,26 +3,29 @@
 # INFO
 name: naml
 
+#
 # DATA
-# source
-train_dir: "/mnt/nvme-local/msertkan/newsrec/data/recsys2021/mind/train"
-test_dir: "/mnt/nvme-local/msertkan/newsrec/data/recsys2021/mind/test"
+#
+# behavior
+train_behavior: "data/ecir2022/train/train_behavior.tsv"
+val_behavior: "data/ecir2022/train/val_behavior.tsv"
+test_behavior: "data/ecir2022/test/test_behavior.tsv"
+# news
+train_news: "data/ecir2022/train/parsed_news.tsv"
+test_news: "data/ecir2022/test/parsed_news.tsv"
+# idx maps 
+user2int: "data/ecir2022/train/user2int.tsv"
+word2int: "data/ecir2022/test/word2int.tsv"
+category2int: "data/ecir2022/train/category2int.tsv"
+# word embedding weights --> here use the embedding_weights 
+# resulting after the test news processing
+# so link to <test_dir>/embedding_weights.csv
+embedding_weights: "data/ecir2022/test/embedding_weights.csv"
 
-# Modify the following by the output of `src/dataprocess.py`
-num_words: 70972  # 1 + 70971
-num_categories: 296  # 1 + 295
-num_entities: 12958  # 1 + 12957
-num_users: 50001 #  1 + 50000
-
-num_clicked_news_a_user: 50  # Number of sampled click history for each user
+max_history: 50  # Number of sampled click history for each user
 num_words_title: 20
 num_words_abstract: 50
-
-# determine which attributes to use form dataset
-dataset_attributes:
-  news: ['category', 'subcategory', 'title', 'abstract', vader_sentiment, distillbert_sst2_sentiment]
-  record: []
-
+num_categories: 275
 
 # MODEL
 learning_rate: 0.0001
@@ -36,14 +39,13 @@ query_vector_dim: 200
 # For CNN
 num_filters: 400
 window_size: 3
-freeze_word_embeddings: True
+freeze_word_embeddings: False
 
 
 # TRAINING
-
 # Checkpoint
 checkpoint:
-  dirpath: "/mnt/nvme-local/msertkan/newsrec/lightning_logs/checkpoints/naml/exp1"
+  dirpath: "logs/lightning_logs/checkpoints/naml/exp1"
   filename: "{epoch}-{val_auc_epoch:.4f}"
   save_top_k: 3
   verbose: True
@@ -53,7 +55,7 @@ checkpoint:
 
 #Logging
 logger:
-  save_dir: "/mnt/nvme-local/msertkan/newsrec/lightning_logs/tensorboard"
+  save_dir: "logs/lightning_logs/tensorboard"
   name: "naml"
   version: "exp1"
 
@@ -61,26 +63,24 @@ logger:
 early_stop:
   monitor: 'val_auc_epoch'
   min_delta: 0.0001
-  patience: 3
+  patience: 5
   strict: False
   verbose: True
   mode: 'max'
 
-# train / val split , e.g., 0.9 for 90%/10%
-train_val_split: 0.9
 # DataLoader
 train_dataloader:
   num_workers: 8
-  batch_size: 64
+  batch_size: 256
   shuffle: True
   drop_last: True
 val_dataloader:
-  num_workers: 24
+  num_workers: 16
   batch_size: 1 # must be one by design TODO make it better :)
   shuffle: False
   drop_last: False
 test_dataloader:
-  num_workers: 24
+  num_workers: 16
   batch_size: 1 # must be one by design TODO make it better :)
   shuffle: False
   drop_last: False
@@ -92,3 +92,5 @@ trainer:
   accelerator: "ddp"
   weights_summary: "top"
   fast_dev_run: False
+#DDPPlugin
+find_unused_parameters: False

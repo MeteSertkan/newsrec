@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.attention.additive_attention import AdditiveAttention
+from models.utils import AdditiveAttention
 
 
 class UserEncoder(torch.nn.Module):

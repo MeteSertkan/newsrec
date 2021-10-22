@@ -1,7 +1,7 @@
-# RobustSentirec vader mu 10
+# NRMS
 
 # INFO
-name: robust_sentirec
+name: naml_simple
 
 #
 # DATA
@@ -26,29 +26,22 @@ max_history: 50  # Number of sampled click history for each user
 num_words_title: 20
 num_words_abstract: 50
 
-
-#MODEL 
+# MODEL
 learning_rate: 0.0001
 dropout_probability: 0.2
+word_embedding_dim: 300
 # For additive attention
 query_vector_dim: 200
-# For SelfAttention
-num_attention_heads: 15
-word_embedding_dim: 300
+# For CNN
+num_filters: 400
+window_size: 3
 freeze_word_embeddings: False
-# SENTIMENT
-sentiment_regularization: True
-# Sentiment Classifier 'vader_sentiment' | 'bert_sentiment'
-sentiment_classifier: 'vader_sentiment'
-# sentiment regularization task loss coeff, i.e., mu
-sentiment_diversity_loss_coeff: 10
-
 
 
 # TRAINING
 # Checkpoint
 checkpoint:
-  dirpath: "logs/lightning_logs/checkpoints/robust_sentirec/vader_mu10"
+  dirpath: "logs/lightning_logs/checkpoints/naml_simple/exp1"
   filename: "{epoch}-{val_auc_epoch:.4f}"
   save_top_k: 3
   verbose: True
@@ -59,8 +52,8 @@ checkpoint:
 #Logging
 logger:
   save_dir: "logs/lightning_logs/tensorboard"
-  name: "robust_sentirec"
-  version: "vader_mu10"
+  name: "naml_simple"
+  version: "exp1"
 
 #EarlyStop
 early_stop:
@@ -74,7 +67,7 @@ early_stop:
 # DataLoader
 train_dataloader:
   num_workers: 8
-  batch_size: 64
+  batch_size: 256
   shuffle: True
   drop_last: True
 val_dataloader:
