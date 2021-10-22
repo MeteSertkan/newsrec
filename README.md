@@ -84,7 +84,7 @@ In our implementations we use the combo pytorch - pytorchlighnting - torchmetric
 2. Create an environment with the provided environment.yml:
 
     ```
-    conda env -f environment.yml
+    conda env create -f environment.yml
     ```
 3. Activate the environment as following: 
     ```
