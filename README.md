@@ -84,11 +84,11 @@ In our implementations we use the combo pytorch - pytorchlighnting - torchmetric
 2. Create an environment with the provided environment.yml:
 
     ```
-    conda env -n _env_name_of_your_choice_ -f environment.yml
+    conda env -f environment.yml
     ```
 3. Activate the environment as following: 
     ```
-    conda activate _env_name_of_your_choice_
+    conda activate newsrec
     ```
 ## Data
 In our experiments we use the Microsoft News Dataset, i.e., MIND. In particular we have used MINDsmall_train in a 9:1 split for trainig and validation; and the MINDsmall_dev as our holdout. The datasets and more detail are provided [here](https://msnews.github.io/index.html). Furthermore, we use 300-dimensional Glove embeddings, which can be downloaded [here](http://nlp.stanford.edu/data/glove.840B.300d.zip). 
