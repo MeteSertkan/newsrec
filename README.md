@@ -6,7 +6,7 @@ Currently our repository contains following models:
 - [NAML](https://arxiv.org/abs/1907.05576)
 - [NRMS](https://www.aclweb.org/anthology/D19-1671/)
 - [SentiRec](https://www.aclweb.org/anthology/2020.aacl-main.6.pdf)
-- RobustSentiRec
+- [RobustSentiRec](#robustsentirec)
 
 ### Table of Contents
 - **[Models](#models)**
@@ -33,17 +33,17 @@ The general architecture of the models looks as following:
 - Candidate items are scored considering candidate items encoding and the target user's encoding
 
 ## LSTUR
-(An et al., 2019)
+[(An et al., 2019)](https://www.aclweb.org/anthology/P19-1033/)
 
 ![](figures/lstur_framework.png)
 > Figure taken from the LSTUR paper.
 
 LSTUR aptures short-term interest of users by applying GRU on recently clicked items and long-term interest by considering a user’s whole history track. 
 
-Please referr to [the paper](https://www.aclweb.org/anthology/P19-1033/) for more details. 
+Please refer to [the paper](https://www.aclweb.org/anthology/P19-1033/) for more details. 
 
 ## NAML
-(WU et al., 2019)
+[(WU et al., 2019)](https://arxiv.org/abs/1907.05576)
 
 ![](figures/naml_framework.png)
 > Figure taken from the NAML paper.
@@ -53,23 +53,23 @@ NAML uses attention networks to incorporate different views of a news article (e
 Please referr to [the paper](https://arxiv.org/abs/1907.05576) for more details. 
 
 ## NRMS
-(Wu et al., 2019)
+[(Wu et al., 2019)](https://www.aclweb.org/anthology/D19-1671/)
 
 ![](figures/nrms_framework.png)
 > Figure taken from the NRMS paper.
 
 NRMS uses multi-head self-attention in combination with additive-attention to model news articles and in turn users. 
 
-Please referr to [the paper](https://www.aclweb.org/anthology/D19-1671/) for more details. 
+Please refer to [the paper](https://www.aclweb.org/anthology/D19-1671/) for more details. 
 
 ## SentiRec
-(Wu et al., 2020)
+[(Wu et al., 2020)](https://www.aclweb.org/anthology/2020.aacl-main.6.pdf)
 
 ![](figures/sentirec_framework.png)
 
 SentiRec builds upon the NRMS mode and learns through an auxiliary sentiment-prediction task in the news encoding sentiment-aware news representations and in turn penalizes recommendations, which have a similar sentiment orientation as the user’s history track.
 
-Please referr to [the paper](https://www.aclweb.org/anthology/2020.aacl-main.6.pdf) for more details. 
+Please refer to [the paper](https://www.aclweb.org/anthology/2020.aacl-main.6.pdf) for more details. 
 
 ## RobustSentiRec
 ![](figures/robust_sentirec_framework.png)
