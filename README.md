@@ -95,7 +95,7 @@ In our experiments we use the Microsoft News Dataset, i.e., MIND. In particular 
 
 In order to train our models, you need to pre-preprocess the data. Therefore, we provide ``./project/data/parse_behavior.py`` and ``./project/data/parse_news.py``. 
 
-Run the prepreocessing as following:
+Run the prepreocessing as following (or use project/data/prep.sh ;) ):
 1. Download the MIND dataset and the Glove embeddings
 2. Create two directories ``<train_dir>`` and ``<test_dir>``; one for training and for the testing data.
 3. Preprocess the impression logs of the mind-trainig data as follows: 
