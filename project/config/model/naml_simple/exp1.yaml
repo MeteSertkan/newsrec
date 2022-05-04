@@ -7,24 +7,25 @@ name: naml_simple
 # DATA
 #
 # behavior
-train_behavior: "data/ecir2022/train/train_behavior.tsv"
-val_behavior: "data/ecir2022/train/val_behavior.tsv"
-test_behavior: "data/ecir2022/test/test_behavior.tsv"
+train_behavior: "data/train/train_behavior.tsv"
+val_behavior: "data/train/val_behavior.tsv"
+test_behavior: "data/test/test_behavior.tsv"
 # news
-train_news: "data/ecir2022/train/parsed_news.tsv"
-test_news: "data/ecir2022/test/parsed_news.tsv"
+train_news: "data/train/parsed_news.tsv"
+test_news: "data/test/parsed_news.tsv"
 # idx maps 
-user2int: "data/ecir2022/train/user2int.tsv"
-word2int: "data/ecir2022/test/word2int.tsv"
-category2int: "data/ecir2022/train/category2int.tsv"
+user2int: "data/train/user2int.tsv"
+word2int: "data/test/word2int.tsv"
+category2int: "data/train/category2int.tsv"
 # word embedding weights --> here use the embedding_weights 
 # resulting after the test news processing
 # so link to <test_dir>/embedding_weights.csv
-embedding_weights: "data/ecir2022/test/embedding_weights.csv"
+embedding_weights: "data/test/embedding_weights.csv"
 
 max_history: 50  # Number of sampled click history for each user
 num_words_title: 20
 num_words_abstract: 50
+num_categories: 275
 
 # MODEL
 learning_rate: 0.0001

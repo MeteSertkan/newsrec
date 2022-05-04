@@ -137,9 +137,11 @@ dask-worker-space/
 #profiler output
 *_profile.txt
 
-*.sh
+#*.sh
 *.DS_Store
 
-project/data/ecir2022/
-project/data/mind/
+project/data/MIND/
+project/data/train/
+project/data/test/
+project/data/word_embeddings/
 project/logs/
