@@ -129,7 +129,7 @@ class SENTIREC(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         y_pred, _ = self(batch)
-        y_pred = torch.rand(y_pred.size(), device=self.device)
+        # y_pred = torch.rand(y_pred.size(), device=self.device)
         y_pred = F.softmax(y_pred, dim=1)
         y = batch["labels"]
         # determine candidate sentiment and overall sentiment orientation
