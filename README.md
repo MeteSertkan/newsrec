@@ -1,75 +1,36 @@
-# Welcome to newsrec 👋
+# NewsRec
+Welcome 👋 to the repo of our paper:
 
-In this repository we work on Neural News Recommendation methods.
+**Diversifying Sentiments in News Recommendation** <br/>
+Mete Sertkan, Sophia Althammer, Sebastian Hofstätter and Julia Neidhardt <br/>
+[https://ceur-ws.org/Vol-3228/paper3.pdf](https://ceur-ws.org/Vol-3228/paper3.pdf)
+
+tldr;  We aim to reproduce SentiRec [(Wu et al., 2020)](https://www.aclweb.org/anthology/2020.aacl-main.6.pdf), a sentiment diversity-aware news recommender that aims to counter the lack of sentiment-diversity in personalized news recommendations. We re-implemented the SentiRec model from scratch and used the Microsoft MIND dataset (ref) for training and evaluation. We have evaluated and discussed our reproduction from different perspectives. In addition to comparing the recommendation list to the user’s interaction history, as the original paper did, we also analyzed the intra-list sentiment diversity of the recommendation list. We also studied the effect of sentiment diversification on topical diversity. Our results suggest that SentiRec does not generalize well to other data sets and that the compared baselines already perform well.
+
+Checkout [our paper](https://ceur-ws.org/Vol-3228/paper3.pdf) for more details, and please feel free to use our source code and let us know if you have any questions or feedback ([mete.sertkan@tuwien.ac.at](mailto:mete.sertkan@tuwien.ac.at) or dm to[@m_sertkan](https://twitter.com/m_sertkan)).
+
+We call this repo, NewsRec, since we also provide all (re-implemented) baselines and an adapted version of SentiRec, i.e. RobustSentiRec, 🤗.
 Currently our repository contains following models:
-- [LSTUR](https://www.aclweb.org/anthology/P19-1033/)
-- [NAML](https://arxiv.org/abs/1907.05576)
-- [NRMS](https://www.aclweb.org/anthology/D19-1671/)
-- [SentiRec](https://www.aclweb.org/anthology/2020.aacl-main.6.pdf)
-- [RobustSentiRec](#robustsentirec)
+- [LSTUR (An et al., 2019)](https://www.aclweb.org/anthology/P19-1033/)
+- [NAML (WU et al., 2019)](https://arxiv.org/abs/1907.05576)
+- [NRMS (Wu et al., 2019)](https://www.aclweb.org/anthology/D19-1671/)
+- [SentiRec (Wu et al., 2020)](#sentirec)
+- [RobustSentiRec (Sertkan et al, 2022)](#robustsentirec)
 
-### Table of Contents
-- **[Models](#models)**
-    - **[LSTUR](#lstur)**
-    - **[NAML](#naml)**
-    - **[NRMS](#nrms)**
-    - **[SentiRec](#sentirec)**
-    - **[RobustSentiRec](#robustsentirec)**
-- **[How to Train and Test?](#how-to-train-and-test)**
-    - **[Requirements](#requirements)**
-    - **[Data](#data)**
-    - **[Train-Run](#train-run)**
-    - **[Test-Run](#test-run)**
-    - **[Monitoring](#monitoring)**
-
-# Models
-The general architecture of the models looks as following:
-
-![](figures/genreal_recommendation_framework.png)
-
-- Items are encoded based on their content.
-- Users are encoded based on their pervious interactions with items.
-- For capturing personalized attention or long-short term interests a user-embedding might be used in the user- or item-encoder.
-- Candidate items are scored considering candidate items encoding and the target user's encoding
-
-## LSTUR
-[(An et al., 2019)](https://www.aclweb.org/anthology/P19-1033/)
-
-![](figures/lstur_framework.png)
-> Figure taken from the LSTUR paper.
-
-LSTUR aptures short-term interest of users by applying GRU on recently clicked items and long-term interest by considering a user’s whole history track. 
-
-Please refer to [the paper](https://www.aclweb.org/anthology/P19-1033/) for more details. 
-
-## NAML
-[(WU et al., 2019)](https://arxiv.org/abs/1907.05576)
-
-![](figures/naml_framework.png)
-> Figure taken from the NAML paper.
-
-NAML uses attention networks to incorporate different views of a news article (e.g., title, abstract, category, etc.) into the news representaiton.
-
-Please referr to [the paper](https://arxiv.org/abs/1907.05576) for more details. 
-
-## NRMS
-[(Wu et al., 2019)](https://www.aclweb.org/anthology/D19-1671/)
-
-![](figures/nrms_framework.png)
-> Figure taken from the NRMS paper.
-
-NRMS uses multi-head self-attention in combination with additive-attention to model news articles and in turn users. 
-
-Please refer to [the paper](https://www.aclweb.org/anthology/D19-1671/) for more details. 
+**Please cite our work as:**
+```
+@inproceedings{sertkan2022diversifying,
+	title        = {Diversifying Sentiments in News Recommendation},
+	author       = {Sertkan, Mete and Althammer, Sophia and Hofst{\"a}tter, Sebastian and Neidhardt, Julia},
+	year         = 2022,
+	booktitle    = {Proceedings of the Perspectives on the Evaluation of Recommender Systems Workshop 2022 co-located with the 16th ACM Conference on Recommender Systems (RecSys 2022)}
+}
+```
 
 ## SentiRec
-[(Wu et al., 2020)](https://www.aclweb.org/anthology/2020.aacl-main.6.pdf)
-
 ![](figures/sentirec_framework.png)
 
-SentiRec builds upon the NRMS mode and learns through an auxiliary sentiment-prediction task in the news encoding sentiment-aware news representations and in turn penalizes recommendations, which have a similar sentiment orientation as the user’s history track.
-
-Please refer to [the paper](https://www.aclweb.org/anthology/2020.aacl-main.6.pdf) for more details. 
+SentiRec builds upon the NRMS model and learns through an auxiliary sentiment-prediction task in the news encoding sentiment-aware news representations and in turn penalizes recommendations, which have a similar sentiment orientation as the user’s history track.
 
 ## RobustSentiRec
 ![](figures/robust_sentirec_framework.png)
